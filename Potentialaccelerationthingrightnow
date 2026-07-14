@@ -1,0 +1,42 @@
+const int stepPin = 6;
+const int dirPin = 5;
+const int enablePin = 7;
+
+void setup() {
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  pinMode(enablePin, OUTPUT);
+  
+  digitalWrite(enablePin, LOW); // Keep driver awake and active
+  digitalWrite(dirPin, HIGH);   // Set direction
+}
+
+void loop() {
+  // --- 1. SAFE ACCELERATION ---
+  // Ramps down smoothly from a slow crawl to a stable high speed
+  for (int speedDelay = 800; speedDelay > 100; speedDelay -= 2) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(10); 
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speedDelay); 
+  }
+
+  // --- 2. STABLE CRUISE PHASE ---
+  // 4000 steps = exactly 2.5 full rotations at 1/8 microstepping
+  for (int i = 0; i < 6000; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(100); // Increased from 100 to prevent torque stalling
+  }
+
+  // --- 3. SAFE DECELERATION ---
+  for (int speedDelay = 100; speedDelay < 800; speedDelay += 2) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speedDelay);
+  }
+
+  delay(2000); // Wait 2 seconds before running the next burst
+}
