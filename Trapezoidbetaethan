@@ -1,0 +1,36 @@
+const int stepPin = 6;
+const int dirPin = 5;
+
+void setup() {
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  digitalWrite(dirPin, HIGH); // Set direction
+}
+const int speed = 200;
+void loop() {
+  // 1. ACCELERATION: Start slow (1200µs delay) and smoothly speed up
+  for (int speedDelay = 1200; speedDelay > speed; speedDelay -= 2) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(20); 
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speedDelay); // Shortening the gap between steps
+  }
+
+  // 2. CRUISE: Run at your ultra-fast 200µs target delay for 4000 steps
+  for (int i = 0; i < 4000; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(20);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speed); 
+  }
+
+  // 3. DECELERATION: Smoothly slow down so the motor doesn't slam to a halt
+  for (int speedDelay = speed; speedDelay < 1200; speedDelay += 2) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(20);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speedDelay);
+  }
+
+  delay(2000000000); // Wait 2 seconds before running the speed cycle again
+}
