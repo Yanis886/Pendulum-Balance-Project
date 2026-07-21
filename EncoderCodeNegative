@@ -16,10 +16,10 @@ void loop() {
   long currentCounter = counter;
   interrupts();
 
-  if (currentCounter != temp) {
-    Serial.println(currentCounter);
-    temp = currentCounter;
-  }
+  
+  Serial.println(currentCounter);
+  temp = currentCounter;
+  
 }
 
 void ai0() {
