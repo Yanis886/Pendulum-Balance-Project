@@ -1,0 +1,21 @@
+Curent Successes:
+  -we have encoder code
+  -we have motor code
+  -works simulatneously
+  -we have a button
+Current Issues:
+  -arduino uno is too damn slow
+  -our motor is grinding
+  -our motor is overheating
+  -our motor might be gone
+  -if we have any sort of delay the motor crashes
+  -We don't know why the motor overheated
+    -could be the fact we added too many if statements
+    -could be that we started the motor wrong
+    -could be that our processing time is bad
+    -could be that it just overheats over time
+    -no idea right now
+  -if it is a time issue we might have to use an esp32
+  -currently we can not print much otherwise the delay makes our motor break
+  -Currently we are assuming our motor is ass, or our set up is ass, or our motor is just inconsistent
+  
