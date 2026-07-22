@@ -1,0 +1,53 @@
+volatile long counter = 0;
+
+const long COUNTS_PER_REV = 1200;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
+
+  attachInterrupt(digitalPinToInterrupt(2), ai0, RISING);
+  attachInterrupt(digitalPinToInterrupt(3), ai1, RISING);
+}
+
+void loop() {
+  long currentCounter;
+
+  noInterrupts();
+  currentCounter = counter;
+  interrupts();
+
+  float degrees = (currentCounter * 360.0) / COUNTS_PER_REV;
+
+  Serial.println(degrees, 2);   // Print with 2 decimal places
+}
+
+void ai0() {
+  if (digitalRead(3) == LOW) {
+    counter++;
+  } else {
+    counter--;
+  }
+
+  // Wrap into 0-1199
+  // if (counter >= COUNTS_PER_REV)
+  //   counter = 0;
+  // else if (counter < 0)
+  //   counter = COUNTS_PER_REV - 1;
+}
+
+void ai1() {
+  if (digitalRead(2) == LOW) {
+    counter--;
+  } else {
+    counter++;
+  }
+
+  // Wrap into 0-1199
+  // if (counter >= COUNTS_PER_REV)
+  //   counter = 0;
+  // else if (counter < 0)
+  //   counter = COUNTS_PER_REV - 1;
+}
