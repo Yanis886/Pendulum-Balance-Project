@@ -1,0 +1,54 @@
+#include "Encoder.h"
+#include "Motor.h"
+
+Motor motor(6, 5); 
+Encoder encoder;
+unsigned long lastPrint = 0;
+
+void ai0() {
+    if (digitalRead(3) == LOW)
+        encoder.counter++;
+    else
+        encoder.counter--;
+}
+
+void ai1() {
+    if (digitalRead(2) == LOW)
+        encoder.counter--;
+    else
+        encoder.counter++;
+}
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(8, INPUT_PULLUP);
+    // while(true){
+    //   if(digitalRead(8)== HIGH){
+    //     break;
+    //   }
+    // }
+    
+    motor.begin();
+
+    pinMode(2, INPUT_PULLUP);
+    pinMode(3, INPUT_PULLUP);
+
+    attachInterrupt(digitalPinToInterrupt(2), ai0, RISING);
+    attachInterrupt(digitalPinToInterrupt(3), ai1, RISING);
+}
+int yanis = 0;
+void loop() {
+
+    encoder.update();
+    if(digitalRead(8)==HIGH){
+    if(yanis== 0){
+      yanis = 1;
+    } else{
+      yanis = 0;
+    }
+    delay(1000);
+    }
+    if( yanis == 1){
+      motor.move(-1);
+    }
+}
