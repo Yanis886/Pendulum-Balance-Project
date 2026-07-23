@@ -1,0 +1,65 @@
+#ifndef MOTOR_H
+#define MOTOR_H
+
+#include <Arduino.h>
+
+class Motor {
+long positionTicks = 0;
+public:
+    Motor(int stepPin, int dirPin) {
+        _stepPin = stepPin;
+        _dirPin = dirPin;
+    }
+
+    void begin() {
+        pinMode(_stepPin, OUTPUT);
+        pinMode(_dirPin, OUTPUT);
+
+        digitalWrite(_stepPin, LOW);
+        digitalWrite(_dirPin, HIGH);
+    }
+    // Current motor position in step ticks relative to the start
+    long getTicks() {
+        return -positionTicks;
+    }
+
+    // Set the current position as zero
+    void resetTicks() {
+        positionTicks = 0;
+    }
+    // dutyCycle ranges from -1.0 to 1.0
+    // Sign = direction
+    // Magnitude = speed
+    void move(float dutyCycle) {
+
+        dutyCycle = constrain(dutyCycle, -1.0, 1.0);
+
+        if (fabs(dutyCycle) < 0.01)
+            return;
+
+        bool forward = dutyCycle > 0;
+
+        digitalWrite(_dirPin, forward ? HIGH : LOW);
+
+        unsigned long pulseDelay =
+            map((int)(fabs(dutyCycle) * 100), 1, 100, 5000, 400);
+
+        digitalWrite(_stepPin, HIGH);
+        delayMicroseconds(pulseDelay);
+        digitalWrite(_stepPin, LOW);
+
+        // Update motor position
+        if (forward)
+            positionTicks++;
+        else
+            positionTicks--;
+
+        delayMicroseconds(pulseDelay);
+    }
+
+private:
+    int _stepPin;
+    int _dirPin;
+};
+
+#endif
