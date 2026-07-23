@@ -1,0 +1,77 @@
+#include "Encoder.h"
+#include "Motor.h"
+
+Motor motor(6, 5); 
+Encoder encoder;
+unsigned long lastPrint = 0;
+
+void ai0() {
+    if (digitalRead(3) == LOW)
+        encoder.counter++;
+    else
+        encoder.counter--;
+}
+
+void ai1() {
+    if (digitalRead(2) == LOW)
+        encoder.counter--;
+    else
+        encoder.counter++;
+}
+
+void setup() {
+    Serial.begin(115200);
+    pinMode(8, INPUT_PULLUP);
+    while(true){
+      if(digitalRead(8)== HIGH){
+        break;
+      }
+    }
+    
+    motor.begin();
+
+    pinMode(2, INPUT_PULLUP);
+    pinMode(3, INPUT_PULLUP);
+
+    attachInterrupt(digitalPinToInterrupt(2), ai0, RISING);
+    attachInterrupt(digitalPinToInterrupt(3), ai1, RISING);
+}
+int yanis = 1;
+int start = 0;
+int value = -1;
+int start2 = 0;
+void loop() {
+    if (start == 0){
+      for (int i = 0; i < 4000; i++) {
+    motor.move(-1);
+}
+start = 1;
+      
+    }
+
+    
+    
+    if( motor.getTicks()<8800 and motor.getTicks()>200){
+//       for (int i = 0; i < 400; i++) {
+//     motor.move(value);
+//     encoder.update();
+// }
+// while(encoder.switchesDirections() ==false ){
+//   motor.move(0);
+//   encoder.update();
+// }
+if (start2 == 0){
+      for (int i = 0; i < 400; i++) {
+    motor.move(1);
+}
+start2 = 1;
+      
+    }
+motor.move(value);
+encoder.update();
+if(encoder.switchesDirections() ==true){
+value=value*-1;
+}
+    }
+
+}
