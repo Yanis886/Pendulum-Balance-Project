@@ -1,0 +1,77 @@
+#ifndef ENCODER_H
+#define ENCODER_H
+
+#include <Arduino.h>
+
+class Encoder {
+public:
+    volatile long counter = 0;
+
+    static const long COUNTS_PER_REV = 1200;
+
+    Encoder() {
+        lastAngle = 0.0;
+        lastTime = millis();
+        derivative = 0.0;
+        lastDirection = 0;
+        directionChanged = false;
+    }
+
+    float getDegrees() {
+        noInterrupts();
+        long counts = counter;
+        interrupts();
+
+        return (counts * 360.0) / COUNTS_PER_REV;
+    }
+
+    void update() {
+        unsigned long now = millis();
+        float angle = getDegrees();
+
+        float dt = (now - lastTime) / 1000.0;
+
+        if (dt <= 0) return;
+
+        derivative = (angle - lastAngle) / dt;
+
+        int currentDirection = 0;
+
+        if (derivative > 0.1)
+            currentDirection = 1;
+        else if (derivative < -0.1)
+            currentDirection = -1;
+
+        directionChanged = false;
+
+        if (currentDirection != 0 &&
+            lastDirection != 0 &&
+            currentDirection != lastDirection) {
+            directionChanged = true;
+        }
+
+        if (currentDirection != 0)
+            lastDirection = currentDirection;
+
+        lastAngle = angle;
+        lastTime = now;
+    }
+
+    float getDerivative() {
+        return derivative;
+    }
+
+    bool switchesDirections() {
+        return directionChanged;
+    }
+
+private:
+    float lastAngle;
+    unsigned long lastTime;
+    float derivative;
+
+    int lastDirection;
+    bool directionChanged;
+};
+
+#endif
