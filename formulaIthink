@@ -1,0 +1,13 @@
+float theta = encoder.getRadians();
+float thetaDot = encoder.getDerivativeRadians();
+
+float PE = m * g * L * (1 - cos(theta));
+float KE = 0.5 * m * L * L * thetaDot * thetaDot;
+
+float E = PE + KE;
+
+float error = E - desiredEnergy;
+
+float output = k * error * thetaDot * cos(theta);
+
+motor.move(constrain(output, -1, 1));
