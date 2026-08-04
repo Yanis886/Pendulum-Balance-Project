@@ -1,0 +1,149 @@
+#include "Encoder.h"
+#include "Motor.h"
+
+Motor motor(6, 5);
+Encoder encoder;
+int start = 0;
+// --- Physical Constants (Matched to Python Simulation) ---
+const float g = 9.81;
+const float L = 0.145;     // Length of your physical rod (meters)
+const float m = 0.02809;   // Mass of your physical bob (kg)
+const float desiredEnergy = 0.0; // Python treats upright vertical as 0 Joules
+
+// --- Controller Gains (Tuned for physical hardware) ---
+const float k = 0.08;      // Python swing-up gain
+const float Kp_th = 50.0;  // Balancing gains from Python script
+const float Kd_th = 15.0;
+const float Kp_x  = 3.1;
+const float Kd_x  = 4.8;
+
+// --- Target Variables ---
+const float x0 = 4500.0;   // Desired center cart position (in encoder ticks)
+
+// --- State Machine & Timing Variables ---
+bool stabilizing = false;
+unsigned long lastMicros = 0;
+float targetVelocity = 0.0; // Tracks the integrated target velocity
+
+// --- Physical Units Calibration Coefficients ---
+// Adjust these to match your actual hardware layout
+const float TICKS_PER_METER = 10000.0;
+
+void ai0() {
+    if (digitalRead(3) == LOW) encoder.counter++;
+    else encoder.counter--;
+}
+
+void ai1() {
+    if (digitalRead(2) == LOW) encoder.counter--;
+    else encoder.counter++;
+}
+
+void setup() {
+    Serial.begin(115200);
+    pinMode(8, INPUT_PULLUP);
+   
+    // Safety startup switch
+    while(digitalRead(8) == HIGH) { delay(10); }
+   
+    motor.begin();
+    pinMode(2, INPUT_PULLUP);
+    pinMode(3, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(2), ai0, RISING);
+    attachInterrupt(digitalPinToInterrupt(3), ai1, RISING);
+
+    lastMicros = micros();
+}
+
+// Function to calculate system energy using Python convention (Upright = 0J)
+float getEnergy(float theta, float thetaDot) {
+    float KE = 0.5 * m * thetaDot * L * thetaDot * L;
+    float PE = m * g * L * (cos(theta) - 1.0);
+    return KE + PE;
+}
+
+// Function to check if the pendulum has entered the balancing window
+bool isControllable(float theta, float energyErr) {
+    // Standardize theta to be between -PI and PI
+    while (theta > PI)  theta -= 2 * PI;
+    while (theta < -PI) theta += 2 * PI;
+   
+    // Python triggers balance loop if within ~20 degrees of upright (0 rad)
+    // and energy error is small
+    return (abs(theta) < (PI / 9.0) && abs(energyErr) < 0.5);
+}
+
+void loop() {
+      if (start == 0){
+      for (int i = 0; i < 4000; i++) {
+    motor.move(-1);
+}
+start = 1;
+      }
+    // 1. Calculate precise delta time (dt)
+    unsigned long currentMicros = micros();
+    float dt = (currentMicros - lastMicros) / 1000000.0;
+    if (dt <= 0.0) dt = 0.005; // Fallback to 5ms loop time
+    lastMicros = currentMicros;
+
+    // 2. Read sensor data and convert to physical units
+    // CRITICAL: Re-map your encoder so 0 radians is standing STRAIGHT UP
+    float theta = encoder.getRadians();
+    float thetaDot = encoder.getDerivative();
+   
+    float xActual = motor.getTicks();
+    // Simple derivative to get physical cart velocity (m/s)
+    static float lastX = 0;
+    float xDot = ((xActual - lastX) / dt) / TICKS_PER_METER;
+    lastX = xActual;
+
+    // Soft limits to protect the physical track ends
+    if (xActual < 8800 && xActual > 200) {
+       
+        float u = 0.0; // This holds the target acceleration (Python's 'u')
+        float E = getEnergy(theta, thetaDot);
+        float energyError = E - desiredEnergy;
+
+        // 3. The Python State Machine Logic
+        if (stabilizing || isControllable(theta, energyError)) {
+            stabilizing = true;
+           
+            // Full State-Feedback Controller (Balancing)
+            float positionErrorInMeters = (xActual - x0) / TICKS_PER_METER;
+            u = (Kp_th * theta) + (Kd_th * thetaDot) + (Kp_x * positionErrorInMeters) + (Kd_x * xDot);
+        } else {
+            // Energy-Shaping Controller (Swing-Up)
+            u = k * E * thetaDot * cos(theta);
+        }
+
+        // 4. TRANSLATION LAYER: Convert Acceleration (u) to Speed Command
+        // Instead of blind integration, we use Euler integration to build a velocity reference
+        targetVelocity += u * dt;
+
+        // Apply a subtle damping leak to the velocity integrator to prevent drift wind-up
+        targetVelocity *= 0.98;
+
+        // Convert the target physical velocity into a -1.0 to 1.0 motor power scale
+        // Adjust the scaling divisor depending on your motor's maximum real-world speed
+        float motorCommand = targetVelocity /2;  //  /2
+
+        // 5. Fire to hardware instantly
+        encoder.update();
+        motor.move(motorCommand);
+        Serial.println(constrain(motorCommand,-1.0,1.0));
+       
+        // Debugging prints to check handoff state
+        static unsigned long lastPrint = 0;
+        if (millis() - lastPrint > 100) {
+            // Serial.print("Mode: "); Serial.print(stabilizing ? "BALANCING" : "SWING-UP");
+            // Serial.print(" | Accel: "); Serial.print(u);
+            // Serial.print(" | MotorCmd: "); Serial.println(motorCommand);
+            lastPrint = millis();
+        }
+    } else {
+        // Safe stop if track limits are reached
+        motor.move(0);
+        stabilizing = false; // Reset state machine if crashed
+        targetVelocity = 0;
+    }
+}
