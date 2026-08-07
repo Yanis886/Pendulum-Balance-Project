@@ -3,3 +3,18 @@ for the future
 correctly to the motor itself, hence if it says it wants to increase by 6 m/s^2 and that means going from 0 to 3 m/s it might
 scale the motor to go up a certain way but that doesn't directly mean 3m/s^2 at all just a regular increase
 so we need to check if the motor is moving the cart exactly how fast we want it too.
+
+
+
+
+Desired acceleration
+        ↓
+Multiply by cart mass
+        ↓
+Desired force
+        ↓
+Convert force to motor torque
+        ↓
+Convert torque to motor current/steps 
+
+this might be a better approach but I'm still not sure.
