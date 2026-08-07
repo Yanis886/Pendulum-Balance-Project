@@ -1,0 +1,5 @@
+for the future
+-right now it is possible that the code is currently getting a correct speed it needs to be but that might just not translate
+correctly to the motor itself, hence if it says it wants to increase by 6 m/s^2 and that means going from 0 to 3 m/s it might
+scale the motor to go up a certain way but that doesn't directly mean 3m/s^2 at all just a regular increase
+so we need to check if the motor is moving the cart exactly how fast we want it too.
