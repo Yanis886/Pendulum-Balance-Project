@@ -11,7 +11,7 @@ const float m = 0.02809;   // Mass of your physical bob (kg)
 const float desiredEnergy = 0.0; // Python treats upright vertical as 0 Joules
 
 // --- Controller Gains (Tuned for physical hardware) ---
-const float k = 0.08;      // Python swing-up gain
+const float k = 0.04;      // Python swing-up gain
 const float Kp_th = 50.0;  // Balancing gains from Python script
 const float Kd_th = 15.0;
 const float Kp_x  = 3.1;
